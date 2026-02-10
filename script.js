@@ -24,14 +24,14 @@ function goToRepo() {
     }
 }
 
-document.getElementById("repo-input").addEventListener("keydown", function (e) {
+document.getElementById("repo-input").addEventListener("keydown", function(e) {
     if (e.key === "Enter") goToRepo();
 });
 
 /* ── View toggling ── */
 
 function showView(name) {
-    ["home", "loading", "error", "docs"].forEach(function (id) {
+    ["home", "loading", "error", "docs"].forEach(function(id) {
         const el = document.getElementById(id);
         el.style.display = "none";
         el.classList.remove("active");
@@ -47,7 +47,7 @@ function parseMarkdown(md) {
 
     // Stash code blocks
     var codeBlocks = [];
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
         var escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(
             />/g,
             "&gt;",
@@ -55,7 +55,7 @@ function parseMarkdown(md) {
         var ph = "%%CB_" + codeBlocks.length + "%%";
         codeBlocks.push(
             '<pre><code class="language-' + (lang || "text") + '">' +
-                escaped.trimEnd() + "</code></pre>",
+            escaped.trimEnd() + "</code></pre>",
         );
         return ph;
     });
@@ -89,18 +89,18 @@ function parseMarkdown(md) {
     // Tables
     html = html.replace(
         /^(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)*)/gm,
-        function (_, hdr, _sep, body) {
-            var ths = hdr.split("|").filter(function (c) {
+        function(_, hdr, _sep, body) {
+            var ths = hdr.split("|").filter(function(c) {
                 return c.trim();
-            }).map(function (c) {
+            }).map(function(c) {
                 return "<th>" + c.trim() + "</th>";
             }).join("");
-            var rows = body.trim().split("\n").filter(function (r) {
+            var rows = body.trim().split("\n").filter(function(r) {
                 return r.trim();
-            }).map(function (row) {
-                var tds = row.split("|").filter(function (c) {
+            }).map(function(row) {
+                var tds = row.split("|").filter(function(c) {
                     return c.trim();
-                }).map(function (c) {
+                }).map(function(c) {
                     return "<td>" + c.trim() + "</td>";
                 }).join("");
                 return "<tr>" + tds + "</tr>";
@@ -114,8 +114,8 @@ function parseMarkdown(md) {
     html = html.replace(/^[\t ]*[-*+]\s+(.+)$/gm, "<li>$1</li>");
     html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
     html = html.replace(/^[\t ]*\d+\.\s+(.+)$/gm, "<oli>$1</oli>");
-    html = html.replace(/((?:<oli>.*<\/oli>\n?)+)/g, function (m) {
-        return "<ol>" + m.replace(/<\/?oli>/g, function (t) {
+    html = html.replace(/((?:<oli>.*<\/oli>\n?)+)/g, function(m) {
+        return "<ol>" + m.replace(/<\/?oli>/g, function(t) {
             return t.replace("oli", "li");
         }) + "</ol>";
     });
@@ -238,8 +238,8 @@ function renderNavTree(nodes, parentUl) {
             btn.className = "toggle-btn";
             btn.textContent = "▼";
             btn.setAttribute("aria-label", "Collapse");
-            (function (btn, li) {
-                btn.addEventListener("click", function () {
+            (function(btn, li) {
+                btn.addEventListener("click", function() {
                     var sub = li.querySelector("ul");
                     if (!sub) return;
                     var hidden = sub.style.display === "none";
@@ -263,7 +263,7 @@ function renderNavTree(nodes, parentUl) {
         a.className = "nav-link" + (node.level > 2 ? " child" : "");
         a.textContent = node.text;
         a.setAttribute("data-id", node.id);
-        a.addEventListener("click", function (e) {
+        a.addEventListener("click", function(e) {
             e.preventDefault();
             var id = this.getAttribute("data-id");
             var target = document.getElementById(id);
@@ -303,7 +303,7 @@ var observer = null;
 
 function setupObserver() {
     if (observer) observer.disconnect();
-    observer = new IntersectionObserver(function (entries) {
+    observer = new IntersectionObserver(function(entries) {
         for (var i = 0; i < entries.length; i++) {
             if (entries[i].isIntersecting) {
                 setActive(entries[i].target.id);
@@ -339,7 +339,7 @@ async function loadRepo(org, repo) {
         for (var i = 0; i < files.length; i++) {
             var res = await fetch(
                 GITHUB_RAW + "/" + org + "/" + repo + "/" + branch + "/" +
-                    files[i],
+                files[i],
             );
             if (res.ok) {
                 md = await res.text();
@@ -358,6 +358,7 @@ async function loadRepo(org, repo) {
         html = resolveUrls(html, org, repo, branch);
 
         // Render
+        document.getElementById("sidebar-title").innerHTML = "";
         document.getElementById("sidebar-title").innerHTML +=
             `<div>${org}</div>`;
         document.getElementById("sidebar-title").innerHTML += `<div>/</div>`;
@@ -385,8 +386,8 @@ async function loadRepo(org, repo) {
 
 /* ── Navigation handler ── */
 
-document.querySelectorAll("a[data-route]").forEach(function (a) {
-    a.addEventListener("click", function (e) {
+document.querySelectorAll("a[data-route]").forEach(function(a) {
+    a.addEventListener("click", function(e) {
         e.preventDefault();
         history.pushState(null, "", this.getAttribute("href"));
         onRouteChange();
@@ -424,7 +425,7 @@ function updateThemeIcon(isDark) {
 }
 
 // Load saved theme on startup
-(function () {
+(function() {
     var saved = localStorage.getItem("theme");
     if (
         saved === "dark" ||
