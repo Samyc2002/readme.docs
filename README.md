@@ -62,6 +62,7 @@ Then visit `http://localhost:3000`.
 
 ## Limitations
 
+- Only works for `github.com` repos as of now.
 - Only parses the root `README.md` (doesn't crawl `docs/` folders yet)
 - The markdown parser covers most common syntax but isn't fully CommonMark-compliant
 - Subject to GitHub API rate limits (60 requests/hour unauthenticated)
