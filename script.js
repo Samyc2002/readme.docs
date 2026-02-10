@@ -435,3 +435,14 @@ function updateThemeIcon(isDark) {
         updateThemeIcon(true);
     }
 })();
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebar-overlay").classList.toggle("open");
+}
+
+document.getElementById("nav-tree").addEventListener("click", function(e) {
+  if (e.target.closest("a.nav-link")) {
+    document.getElementById("sidebar").classList.remove("open");
+  }
+});
