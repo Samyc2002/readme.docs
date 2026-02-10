@@ -67,13 +67,6 @@ Then visit `http://localhost:3000`.
 - Subject to GitHub API rate limits (60 requests/hour unauthenticated)
 - No caching yet — fetches the README on every page load
 
-## What's Next
-
-- Support for `docs/` folder navigation alongside the README
-- GitHub token input for higher API rate limits
-- Local caching with `localStorage` to avoid redundant fetches
-- Dark mode toggle (respecting `prefers-color-scheme`)
-
 ## License
 
 MIT
