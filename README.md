@@ -71,3 +71,7 @@ Then visit `http://localhost:3000`.
 ## License
 
 MIT
+
+## PS
+
+No README or docs? Don't worry I got you covered. Check this out: [GithubWikiGenerator](https://github.com/Samyc2002/GithubWikiGenerator)
