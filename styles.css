@@ -133,7 +133,7 @@ article hr { border: none; border-top: 1px solid #e0e0e0; margin: 2em 0; }
   position: relative; display: flex; gap: 6px; margin-top: 6px;
 }
 .icon-btn {
-  background: none; border: 1px solid #ddd; border-radius: 4px;
+  background: #fff; border: 1px solid #ddd; border-radius: 4px;
   cursor: pointer; padding: 5px 6px; color: inherit;
   display: inline-flex; align-items: center; justify-content: center;
   text-decoration: none; line-height: 1;
@@ -142,6 +142,7 @@ article hr { border: none; border-top: 1px solid #e0e0e0; margin: 2em 0; }
 
 /* Dark mode */
 body.dark { background: #161b22; color: #c9d1d9; }
+body.dark .icon-btn { background: #161b22; }
 body.dark .icon-btn { border-color: #333; }
 body.dark .icon-btn:hover { background: #21262d; }
 body.dark #sidebar { border-right-color: #30363d; }
@@ -151,6 +152,7 @@ body.dark #home button { background: #f0f0f0; color: #111; }
 body.dark article a { color: #58a6ff; }
 body.dark article pre { background: #0d1117; border-color: #30363d; }
 body.dark article code { background: #21262d; }
+body.dark article pre code { background: none; }
 body.dark article th { background: #161b22; }
 body.dark article th, body.dark article td { border-color: #30363d; }
 body.dark article blockquote { border-left-color: #30363d; color: #8b949e; }
@@ -186,4 +188,16 @@ body.dark #menu-toggle { background: #161b22; border-color: #333; }
 
   #content { padding: 28px 20px 60px; }
   .top-buttons { right: 12px; }
+}
+
+.sticky-title {
+  display: none; position: fixed; top: 0; left: 260px; right: 0;
+  padding: 15px 40px; font-weight: 600; font-size: 20px;
+  background: #fff; border-bottom: 1px solid #e0e0e0;
+  z-index: 10; font-family: monospace;
+}
+body.dark .sticky-title { background: #161b22; border-bottom-color: #30363d; color: #c9d1d9; }
+
+@media (max-width: 768px) {
+  .sticky-title { left: 0; padding-left: 60px; }
 }
