@@ -74,4 +74,4 @@ MIT
 
 ## PS
 
-No README or docs? Don't worry I got you covered. Check this out: [GithubWikiGenerator](https://github.com/Samyc2002/GithubWikiGenerator) for the repo and of course, [https://readmedocs.netlify.app/Samyc2002/GithubWikiGenerator](https://readmedocs.netlify.app/Samyc2002/GithubWikiGenerator) for the docs 😜
+No README or docs? Don't worry I got you covered. Check this out: [GithubWikiGenerator](https://github.com/Samyc2002/GithubWikiGenerator) for the repo and of course, [readmedocs.netlify.app/Samyc2002/GithubWikiGenerator](https://readmedocs.netlify.app/Samyc2002/GithubWikiGenerator) for the docs 😜
