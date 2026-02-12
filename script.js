@@ -329,6 +329,50 @@ async function loadRepo(org, repo) {
         'Fetching README for <strong style="font-family:monospace">' + org +
         "/" + repo + "</strong>…";
 
+    document.getElementById("article").addEventListener("click", function (e) {
+        var link = e.target.closest("a");
+        if (!link) return;
+        var href = link.getAttribute("href");
+        if (!href) return;
+
+        // Anchor links — scroll to section
+        if (href.startsWith("#")) {
+            e.preventDefault();
+            var target = document.getElementById(href.slice(1));
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+            return;
+        }
+
+        // Links pointing back to the same repo on GitHub — stay in app
+        var self = "/" + org + "/" + repo;
+        var ghUrl = "https://github.com/" + org + "/" + repo;
+        if (href === self || href === ghUrl || href === ghUrl + "/") {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+
+        // Links to files within the same repo — stay in app
+        if (
+            href.startsWith(ghUrl + "/blob/") ||
+            href.startsWith(ghUrl + "/tree/")
+        ) {
+            // Let these open normally in GitHub
+            return;
+        }
+
+        // Links to other repos on readmedocs — navigate in app
+        var currentHost = location.origin;
+        if (href.startsWith(currentHost + "/")) {
+            e.preventDefault();
+            history.pushState(null, "", href.replace(currentHost, ""));
+            onRouteChange();
+            return;
+        }
+    });
+
     try {
         var repoRes = await fetch(GITHUB_API + "/" + org + "/" + repo);
         if (!repoRes.ok) {
