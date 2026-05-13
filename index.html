@@ -45,9 +45,14 @@
 <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <div id="docs">
-  <div id="sticky-title" class="sticky-title"></div>
-  <div class="top-buttons">
-    <div class="sidebar-buttons">
+  <header id="topnav">
+    <div class="topnav-left">
+      <a href="/" class="topnav-brand">readme.docs</a>
+      <a id="topnav-home" href="#" class="topnav-link">Home</a>
+      <a id="topnav-docs" href="#" class="topnav-link" style="display:none">Documentation</a>
+      <a id="topnav-license" href="#" class="topnav-link" style="display:none">License</a>
+    </div>
+    <div class="topnav-right">
       <a class="icon-btn" id="site-url-link" href="#" target="_blank" aria-label="Open docs page">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -62,18 +67,19 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
       </button>
     </div>
-  </div>
+  </header>
+  <div id="sticky-title" class="sticky-title"></div>
   <nav id="sidebar" aria-label="Table of contents">
-    <div class="brand">
-      <a href="/">readme.docs</a>
-    </div>
-    <div class="repo-name" id="sidebar-title"></div>
-    <div id="docs-link-container"></div>
     <ul id="nav-tree"></ul>
   </nav>
   <main id="content">
     <article id="article"></article>
   </main>
+  <nav id="bottomnav">
+    <a id="bottomnav-home" href="#" class="bottomnav-link">Home</a>
+    <a id="bottomnav-docs" href="#" class="bottomnav-link" style="display:none">Docs</a>
+    <a id="bottomnav-license" href="#" class="bottomnav-link" style="display:none">License</a>
+  </nav>
 </div>
 
 <script src="/script.js"></script>
