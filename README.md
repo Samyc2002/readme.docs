@@ -23,7 +23,9 @@ That's it. One URL, instant docs.
 
 ## Features
 
-**Zero dependencies** — No frameworks, no node_modules. A single HTML file with vanilla JS and minimal CSS. The entire app is under 15KB.
+**Zero dependencies** — No frameworks, no node_modules. Vanilla JS and minimal CSS. The entire app is under 15KB.
+
+**Docs folder support** — Repos with a `docs/` folder get a "Documentation" link in the sidebar. Browse the directory listing, click any markdown file, and it renders in place with breadcrumb navigation. Paths like `/owner/repo/docs/getting-started.md` just work.
 
 **Semantic HTML** — Uses `nav`, `main`, `article`, and proper heading hierarchy. Works well with terminal web readers like `w3m`, `lynx`, and screen readers.
 
@@ -37,7 +39,9 @@ That's it. One URL, instant docs.
 
 **Relative URL resolution** — Images and links with relative paths are automatically resolved to their raw GitHub URLs, so everything renders correctly.
 
-**Clean URL routing** — Uses `history.pushState` for clean paths like `/owner/repo` instead of hash-based routing.
+**Clean URL routing** — Uses `history.pushState` for clean paths like `/owner/repo` and `/owner/repo/docs/file.md` instead of hash-based routing.
+
+**API response caching** — Repository metadata is cached in-memory to avoid redundant API calls when navigating between docs pages in the same repo.
 
 ## Running Locally
 
@@ -55,15 +59,24 @@ Then visit `http://localhost:3000`.
 
 ```
 .
-├── index.html    # The entire app — markup + styles
-├── script.js     # Routing, markdown parser, sidebar nav, rendering
+├── index.html    # Markup and layout
+├── script.js     # Routing, markdown parser, sidebar nav, docs browsing, rendering
+├── styles.css    # All styles including dark mode, directory listings, breadcrumbs
+├── docs/         # Example documentation pages
+│   ├── getting-started.md
+│   ├── architecture.md
+│   ├── markdown-parser.md
+│   ├── routing.md
+│   ├── api-integration.md
+│   ├── theming.md
+│   └── contributing.md
 └── README.md     # You are here
 ```
 
 ## Limitations
 
 - Only works for `github.com` repos as of now.
-- Only parses the root `README.md` (doesn't crawl `docs/` folders yet)
+- Supports `docs/` folder browsing but doesn't crawl nested subdirectories beyond one level
 - The markdown parser covers most common syntax but isn't fully CommonMark-compliant
 - Subject to GitHub API rate limits (60 requests/hour unauthenticated)
 - No caching yet — fetches the README on every page load
