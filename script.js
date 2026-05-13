@@ -1,15 +1,34 @@
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const GITHUB_API = "https://api.github.com/repos";
 
-let currentActiveId = "";
+var currentActiveId = "";
+var currentOrg = "";
+var currentRepo = "";
+var currentDocsPath = "";
+var repoMetaCache = {};
+
+async function getRepoMeta(org, repo) {
+    var key = org + "/" + repo;
+    if (repoMetaCache[key]) return repoMetaCache[key];
+    var res = await fetch(GITHUB_API + "/" + org + "/" + repo);
+    if (!res.ok) throw new Error("Repository not found: " + org + "/" + repo);
+    var data = await res.json();
+    repoMetaCache[key] = data;
+    return data;
+}
 
 /* ── Routing ── */
 
 function parseHash() {
-    const h = location.pathname.replace(/^\//, "");
+    var h = location.pathname.replace(/^\//, "");
     if (!h) return null;
-    const p = h.split("/").filter(Boolean);
-    return p.length >= 2 ? { org: p[0], repo: p[1] } : null;
+    var p = h.split("/").filter(Boolean);
+    if (p.length < 2) return null;
+    var result = { org: p[0], repo: p[1] };
+    if (p.length > 2) {
+        result.docsPath = p.slice(2).join("/");
+    }
+    return result;
 }
 
 function goToRepo() {
@@ -329,57 +348,15 @@ async function loadRepo(org, repo) {
         'Fetching README for <strong style="font-family:monospace">' + org +
         "/" + repo + "</strong>…";
 
-    document.getElementById("article").addEventListener("click", function (e) {
-        var link = e.target.closest("a");
-        if (!link) return;
-        var href = link.getAttribute("href");
-        if (!href) return;
-
-        // Anchor links — scroll to section
-        if (href.startsWith("#")) {
-            e.preventDefault();
-            var target = document.getElementById(href.slice(1));
-            if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-            return;
-        }
-
-        // Links pointing back to the same repo on GitHub — stay in app
-        var self = "/" + org + "/" + repo;
-        var ghUrl = "https://github.com/" + org + "/" + repo;
-        if (href === self || href === ghUrl || href === ghUrl + "/") {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            return;
-        }
-
-        // Links to files within the same repo — stay in app
-        if (
-            href.startsWith(ghUrl + "/blob/") ||
-            href.startsWith(ghUrl + "/tree/")
-        ) {
-            // Let these open normally in GitHub
-            return;
-        }
-
-        // Links to other repos on readmedocs — navigate in app
-        var currentHost = location.origin;
-        if (href.startsWith(currentHost + "/")) {
-            e.preventDefault();
-            history.pushState(null, "", href.replace(currentHost, ""));
-            onRouteChange();
-            return;
-        }
-    });
-
     try {
-        var repoRes = await fetch(GITHUB_API + "/" + org + "/" + repo);
-        if (!repoRes.ok) {
-            throw new Error("Repository not found: " + org + "/" + repo);
-        }
-        var repoData = await repoRes.json();
+        var repoData = await getRepoMeta(org, repo);
         var branch = repoData.default_branch || "main";
+
+        var hasDocsFolder = false;
+        var docsCheckPromise = fetch(GITHUB_API + "/" + org + "/" + repo + "/contents/docs?ref=" + branch)
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) { hasDocsFolder = Array.isArray(data); })
+            .catch(function() { hasDocsFolder = false; });
 
         var md = null;
         var files = ["README.md", "readme.md", "README", "Readme.md"];
@@ -420,6 +397,26 @@ async function loadRepo(org, repo) {
             `<div>${repo}</div>`;
         document.title = org + "/" + repo + " — readme.docs";
 
+        currentOrg = org;
+        currentRepo = repo;
+        currentDocsPath = "";
+
+        await docsCheckPromise;
+        var docsLinkContainer = document.getElementById("docs-link-container");
+        docsLinkContainer.innerHTML = "";
+        if (hasDocsFolder) {
+            var docsLink = document.createElement("a");
+            docsLink.href = "/" + org + "/" + repo + "/docs/";
+            docsLink.className = "docs-folder-link";
+            docsLink.textContent = "Documentation";
+            docsLink.addEventListener("click", function(e) {
+                e.preventDefault();
+                history.pushState(null, "", "/" + org + "/" + repo + "/docs/");
+                onRouteChange();
+            });
+            docsLinkContainer.appendChild(docsLink);
+        }
+
         var navUl = document.getElementById("nav-tree");
         navUl.innerHTML = "";
         renderNavTree(tree, navUl);
@@ -440,6 +437,240 @@ async function loadRepo(org, repo) {
     }
 }
 
+/* ── Docs browsing ── */
+
+function resolvePath(base, relative) {
+    if (relative.startsWith("/")) return relative.replace(/^\//, "");
+    var parts = base.split("/").filter(Boolean);
+    var relParts = relative.split("/");
+    for (var i = 0; i < relParts.length; i++) {
+        if (relParts[i] === "..") {
+            parts.pop();
+        } else if (relParts[i] !== ".") {
+            parts.push(relParts[i]);
+        }
+    }
+    return parts.join("/");
+}
+
+function resolveDocsUrls(html, org, repo, branch, docsPath) {
+    var dirPath = docsPath.replace(/\/[^\/]*$/, "");
+    var rawBase = GITHUB_RAW + "/" + org + "/" + repo + "/" + branch + "/" + dirPath;
+
+    html = html.replace(/src="(?!https?:\/\/|data:)([^"]+)"/g, function(_, path) {
+        if (path.startsWith("/")) {
+            return 'src="' + GITHUB_RAW + "/" + org + "/" + repo + "/" + branch + path + '"';
+        }
+        return 'src="' + rawBase + '/' + path + '"';
+    });
+
+    html = html.replace(/href="(?!https?:\/\/|#|mailto:)([^"]+)"/g, function(_, path) {
+        if (path.match(/\.md$/i)) {
+            var resolved = resolvePath(dirPath, path);
+            return 'href="/' + org + '/' + repo + '/' + resolved + '" data-internal';
+        }
+        if (path.startsWith("/")) {
+            return 'href="' + GITHUB_RAW + "/" + org + "/" + repo + "/" + branch + path + '"';
+        }
+        return 'href="' + rawBase + '/' + path + '" target="_blank" rel="noopener"';
+    });
+
+    return html;
+}
+
+function buildBreadcrumb(org, repo, docsPath) {
+    var parts = docsPath.split("/").filter(Boolean);
+    var html = '<nav class="breadcrumb" aria-label="Breadcrumb">';
+    html += '<a href="/' + org + '/' + repo + '" data-internal>' + repo + '</a>';
+
+    var accumulated = "";
+    for (var i = 0; i < parts.length; i++) {
+        html += ' <span class="breadcrumb-sep">/</span> ';
+        accumulated += (accumulated ? "/" : "") + parts[i];
+        if (i < parts.length - 1) {
+            html += '<a href="/' + org + '/' + repo + '/' + accumulated + '" data-internal>' + parts[i] + '</a>';
+        } else {
+            html += '<span class="breadcrumb-current">' + parts[i] + '</span>';
+        }
+    }
+
+    html += '</nav>';
+    return html;
+}
+
+function formatPathTitle(docsPath) {
+    var parts = docsPath.split("/").filter(Boolean);
+    var name = parts[parts.length - 1] || "docs";
+    return name.replace(/\.md$/i, "");
+}
+
+function renderDirectoryListing(items, org, repo, docsPath) {
+    var navUl = document.getElementById("nav-tree");
+    navUl.innerHTML = "";
+    if (observer) observer.disconnect();
+    window.scrollTo(0, 0);
+
+    var breadcrumb = buildBreadcrumb(org, repo, docsPath);
+
+    var dirs = [];
+    var files = [];
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].type === "dir") {
+            dirs.push(items[i]);
+        } else {
+            files.push(items[i]);
+        }
+    }
+    dirs.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    files.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    var sorted = dirs.concat(files);
+
+    var html = breadcrumb;
+    html += '<h1>' + formatPathTitle(docsPath) + '</h1>';
+
+    if (sorted.length === 0) {
+        html += '<p style="color:#666;margin-top:1em;">This directory is empty.</p>';
+    } else {
+        html += '<ul class="dir-listing">';
+        for (var i = 0; i < sorted.length; i++) {
+            var item = sorted[i];
+            var icon = item.type === "dir" ? "&#128193; " : "&#128196; ";
+            var itemPath = "/" + org + "/" + repo + "/" + item.path;
+            html += '<li>';
+            html += '<a href="' + itemPath + '" class="dir-listing-link" data-internal>';
+            html += icon + item.name;
+            if (item.type === "dir") html += "/";
+            html += '</a>';
+            html += '</li>';
+        }
+        html += '</ul>';
+    }
+
+    document.getElementById("article").innerHTML = html;
+    setupInternalLinks();
+}
+
+async function renderDocFile(fileData, org, repo, branch, docsPath) {
+    var rawUrl = GITHUB_RAW + "/" + org + "/" + repo + "/" + branch + "/" + docsPath;
+    var res = await fetch(rawUrl);
+    if (!res.ok) throw new Error("Could not fetch file: " + docsPath);
+    var content = await res.text();
+    window.scrollTo(0, 0);
+
+    var isMarkdown = /\.md$/i.test(docsPath);
+    var breadcrumb = buildBreadcrumb(org, repo, docsPath);
+
+    if (isMarkdown) {
+        var headings = extractHeadings(content);
+        var tree = buildNavTree(headings);
+        var html = parseMarkdown(content);
+        html = addHeadingIds(html, headings);
+        html = resolveDocsUrls(html, org, repo, branch, docsPath);
+
+        var navUl = document.getElementById("nav-tree");
+        navUl.innerHTML = "";
+        renderNavTree(tree, navUl);
+
+        document.getElementById("article").innerHTML = breadcrumb + html;
+
+        setupInternalLinks();
+        setTimeout(setupObserver, 100);
+        setupStickyTitle();
+    } else {
+        var navUl = document.getElementById("nav-tree");
+        navUl.innerHTML = "";
+        if (observer) observer.disconnect();
+
+        var escaped = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        var html = breadcrumb;
+        html += '<h1>' + formatPathTitle(docsPath) + '</h1>';
+        html += '<p style="margin-bottom:1em;"><a href="https://github.com/' + org + '/' + repo + '/blob/' + branch + '/' + docsPath + '" target="_blank" rel="noopener">View on GitHub</a></p>';
+        html += '<pre><code>' + escaped + '</code></pre>';
+
+        document.getElementById("article").innerHTML = html;
+        setupInternalLinks();
+    }
+}
+
+function setupInternalLinks() {
+    var links = document.querySelectorAll("#article a[data-internal]");
+    for (var i = 0; i < links.length; i++) {
+        links[i].addEventListener("click", function(e) {
+            e.preventDefault();
+            history.pushState(null, "", this.getAttribute("href"));
+            onRouteChange();
+        });
+    }
+}
+
+function setupSidebarForDocs(org, repo, repoData) {
+    document.getElementById("sidebar-gh-link").href = "https://github.com/" + org + "/" + repo;
+
+    var siteLink = document.getElementById("site-url-link");
+    if (repoData.homepage) {
+        siteLink.href = repoData.homepage;
+        siteLink.style.display = "";
+    } else {
+        siteLink.style.display = "none";
+    }
+
+    document.getElementById("sidebar-title").innerHTML =
+        "<div>" + org + "</div><div>/</div><div>" + repo + "</div>";
+
+    var docsLinkContainer = document.getElementById("docs-link-container");
+    docsLinkContainer.innerHTML = "";
+    var docsLink = document.createElement("a");
+    docsLink.href = "/" + org + "/" + repo + "/docs/";
+    docsLink.className = "docs-folder-link";
+    docsLink.textContent = "Documentation";
+    docsLink.addEventListener("click", function(e) {
+        e.preventDefault();
+        history.pushState(null, "", "/" + org + "/" + repo + "/docs/");
+        onRouteChange();
+    });
+    docsLinkContainer.appendChild(docsLink);
+}
+
+async function loadDocsContent(org, repo, docsPath) {
+    showView("loading");
+    document.getElementById("loading-msg").innerHTML =
+        'Loading <strong style="font-family:monospace">' + docsPath + '</strong>…';
+
+    try {
+        var repoData = await getRepoMeta(org, repo);
+        var branch = repoData.default_branch || "main";
+
+        var contentsRes = await fetch(
+            GITHUB_API + "/" + org + "/" + repo + "/contents/" + docsPath + "?ref=" + branch
+        );
+        if (!contentsRes.ok) {
+            throw new Error("Path not found: " + docsPath);
+        }
+        var contentsData = await contentsRes.json();
+
+        currentOrg = org;
+        currentRepo = repo;
+        currentDocsPath = docsPath;
+
+        setupSidebarForDocs(org, repo, repoData);
+
+        if (Array.isArray(contentsData)) {
+            renderDirectoryListing(contentsData, org, repo, docsPath);
+        } else if (contentsData.type === "file") {
+            await renderDocFile(contentsData, org, repo, branch, docsPath);
+        } else {
+            throw new Error("Unsupported content type at: " + docsPath);
+        }
+
+        showView("docs");
+        document.title = docsPath + " — " + org + "/" + repo + " — readme.docs";
+
+    } catch (err) {
+        document.getElementById("error-msg").textContent = err.message;
+        showView("error");
+    }
+}
+
 /* ── Navigation handler ── */
 
 document.querySelectorAll("a[data-route]").forEach(function (a) {
@@ -454,17 +685,67 @@ document.querySelectorAll("a[data-route]").forEach(function (a) {
 
 function onRouteChange() {
     var route = parseHash();
-    if (route) {
-        loadRepo(route.org, route.repo);
-    } else {
+    if (!route) {
         showView("home");
         document.title = "readme.docs";
         if (observer) observer.disconnect();
+        return;
+    }
+    if (route.docsPath) {
+        loadDocsContent(route.org, route.repo, route.docsPath);
+    } else {
+        loadRepo(route.org, route.repo);
     }
 }
 
 window.addEventListener("popstate", onRouteChange);
 onRouteChange();
+
+document.getElementById("article").addEventListener("click", function (e) {
+    var link = e.target.closest("a");
+    if (!link) return;
+    var href = link.getAttribute("href");
+    if (!href) return;
+
+    if (href.startsWith("#")) {
+        e.preventDefault();
+        var target = document.getElementById(href.slice(1));
+        if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+    }
+
+    if (link.hasAttribute("data-internal")) {
+        e.preventDefault();
+        history.pushState(null, "", href);
+        onRouteChange();
+        return;
+    }
+
+    var self = "/" + currentOrg + "/" + currentRepo;
+    var ghUrl = "https://github.com/" + currentOrg + "/" + currentRepo;
+    if (href === self || href === ghUrl || href === ghUrl + "/") {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+    }
+
+    if (
+        href.startsWith(ghUrl + "/blob/") ||
+        href.startsWith(ghUrl + "/tree/")
+    ) {
+        return;
+    }
+
+    var currentHost = location.origin;
+    if (href.startsWith(currentHost + "/")) {
+        e.preventDefault();
+        history.pushState(null, "", href.replace(currentHost, ""));
+        onRouteChange();
+        return;
+    }
+});
 
 function toggleTheme() {
     var isDark = document.body.classList.toggle("dark");

@@ -201,3 +201,60 @@ body.dark .sticky-title { background: #161b22; border-bottom-color: #30363d; col
 @media (max-width: 768px) {
   .sticky-title { left: 0; padding-left: 60px; }
 }
+
+/* -- Docs folder link -- */
+#docs-link-container { margin-bottom: 8px; }
+.docs-folder-link {
+  display: block;
+  text-decoration: none;
+  color: #0366d6;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 0;
+}
+.docs-folder-link:hover { text-decoration: underline; }
+body.dark .docs-folder-link { color: #58a6ff; }
+
+/* -- Directory listing -- */
+.dir-listing {
+  list-style: none;
+  padding: 0;
+  margin: 1em 0;
+}
+.dir-listing li {
+  margin: 0;
+  border-bottom: 1px solid #eee;
+}
+.dir-listing li:last-child { border-bottom: none; }
+.dir-listing-link {
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #0366d6;
+  font-size: 14px;
+  font-family: monospace;
+}
+.dir-listing-link:hover { background: #f6f8fa; }
+body.dark .dir-listing li { border-bottom-color: #21262d; }
+body.dark .dir-listing-link { color: #58a6ff; }
+body.dark .dir-listing-link:hover { background: #161b22; }
+
+/* -- Breadcrumb -- */
+.breadcrumb {
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-family: monospace;
+}
+.breadcrumb a {
+  color: #0366d6;
+  text-decoration: none;
+}
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb-sep { color: #999; margin: 0 2px; }
+.breadcrumb-current { color: #555; font-weight: 500; }
+body.dark .breadcrumb { border-bottom-color: #21262d; }
+body.dark .breadcrumb a { color: #58a6ff; }
+body.dark .breadcrumb-sep { color: #555; }
+body.dark .breadcrumb-current { color: #c9d1d9; }
